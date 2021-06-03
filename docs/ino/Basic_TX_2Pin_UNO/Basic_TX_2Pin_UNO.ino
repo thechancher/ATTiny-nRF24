@@ -11,8 +11,8 @@ Radio circuit
 
 Connections
 Radio		Arduino
-MOMI	|	GR	->	1
-SCK		|	YL	->	2
+MOMI	|	GR	->	5
+SCK		|	YL	->	6
 VCC		|		->	No more than 3.6 volts
 GND		|		->	GND
 
@@ -22,9 +22,9 @@ GND		|		->	GND
 
 const static uint8_t RADIO_ID = 2;
 const static uint8_t DESTINATION_RADIO_ID = 0;
-const static uint8_t PIN_RADIO_MOMI = 1;
-const static uint8_t PIN_RADIO_SCK = 2;
-const static uint8_t PIN_LED = 4;
+const static uint8_t PIN_RADIO_MOMI = 5;
+const static uint8_t PIN_RADIO_SCK = 6;
+const static uint8_t PIN_LED = 13;
 
 struct RadioPacket
 {
@@ -39,12 +39,14 @@ RadioPacket _radioData;
 void setup()
 {
 	pinMode(PIN_LED, OUTPUT);
+	Serial.begin(115200);
 
 	if (!_radio.initTwoPin(RADIO_ID, PIN_RADIO_MOMI, PIN_RADIO_SCK)) // Note usage of 'initTwoPin' rather than 'init'.
 	{
+		Serial.println("Cannot communicate with radio");
 		digitalWrite(PIN_LED, HIGH);
 		while (1)
-			; // Cannot communicate with radio.
+			; // Wait here forever.
 	}
 
 	_radioData.FromRadioId = RADIO_ID;
@@ -54,8 +56,17 @@ void loop()
 {
 	_radioData.OnTimeMillis = millis();
 
-	if (!_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
+	Serial.print("Sending ");
+	Serial.print(_radioData.OnTimeMillis);
+	Serial.print(" ms");
+
+	if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
 	{
+		Serial.println("...Success");
+	}
+	else
+	{
+		Serial.println("...Failed");
 		_radioData.FailedTxCount++;
 	}
 
